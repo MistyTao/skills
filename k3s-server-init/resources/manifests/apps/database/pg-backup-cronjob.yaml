@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pg-backup-pvc
+  namespace: database
+  labels:
+    app.kubernetes.io/name: pg-backup
+    app.kubernetes.io/component: backup
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-backup
+  namespace: database
+  labels:
+    app.kubernetes.io/name: pg-backup
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "${BACKUP_SCHEDULE}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-backup
+              image: postgres:18
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  TIMESTAMP=$$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/backups/pgdump_$${BACKUP_DB}_$${TIMESTAMP}.sql.gz"
+                  echo "[$$(date)] Starting backup of database: $${BACKUP_DB}"
+                  PGPASSWORD="$${BACKUP_PASSWORD}" pg_dump \
+                    -h postgresql.database.svc.cluster.local \
+                    -U "$${BACKUP_USER}" \
+                    -d "$${BACKUP_DB}" \
+                    --verbose \
+                    | gzip > "$${BACKUP_FILE}"
+                  echo "[$$(date)] Backup completed: $${BACKUP_FILE} ($$(du -h $${BACKUP_FILE} | cut -f1))"
+                  # Cleanup old backups
+                  echo "[$$(date)] Cleaning up backups older than ${BACKUP_RETAIN_DAYS} days..."
+                  find /backups -name "pgdump_*.sql.gz" -mtime +${BACKUP_RETAIN_DAYS} -delete -print
+                  echo "[$$(date)] Remaining backups:"
+                  ls -lh /backups/pgdump_*.sql.gz 2>/dev/null || echo "  (none)"
+              env:
+                - name: BACKUP_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-secret
+                      key: POSTGRES_DB
+                - name: BACKUP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-secret
+                      key: POSTGRES_USER
+                - name: BACKUP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-secret
+                      key: POSTGRES_PASSWORD
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: pg-backup-pvc
