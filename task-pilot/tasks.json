@@ -1,0 +1,102 @@
+[
+  {
+    "id": "T1",
+    "description": "买 VPN",
+    "type": "其他",
+    "deadline": "未设置",
+    "progress": 100,
+    "current_goal": "未设置",
+    "resources": [
+      "https://sanyuandian.net"
+    ],
+    "sleep_until": 0,
+    "status": "completed",
+    "created_at": "2026-07-02T17:34:36.907Z",
+    "completed_at": "2026-07-03T01:12:46.116Z",
+    "workload_summary": "已购买 VPN，并配置完毕。"
+  },
+  {
+    "id": "T2",
+    "description": "配置 Oracle 云服务器",
+    "type": "其他",
+    "deadline": "今天",
+    "progress": 40,
+    "current_goal": "未设置",
+    "resources": [],
+    "sleep_until": 1783135711680,
+    "status": "active",
+    "created_at": "2026-07-02T17:34:36.990Z",
+    "completed_at": null,
+    "workload_summary": null
+  },
+  {
+    "id": "T3",
+    "description": "小米手机更换电池",
+    "type": "其他",
+    "deadline": "未设置",
+    "progress": 0,
+    "current_goal": "未设置",
+    "resources": [],
+    "sleep_until": 1783038877035,
+    "status": "active",
+    "created_at": "2026-07-02T17:34:37.035Z",
+    "completed_at": null,
+    "workload_summary": null
+  },
+  {
+    "id": "T4",
+    "description": "泰国/香港/菲律宾手机卡充值",
+    "type": "其他",
+    "deadline": "未设置",
+    "progress": 0,
+    "current_goal": "未设置",
+    "resources": [],
+    "sleep_until": 1783085677081,
+    "status": "active",
+    "created_at": "2026-07-02T17:34:37.081Z",
+    "completed_at": null,
+    "workload_summary": null
+  },
+  {
+    "id": "T5",
+    "description": "国泰兑换点数",
+    "type": "其他",
+    "deadline": "未设置",
+    "progress": 0,
+    "current_goal": "延长有效期",
+    "resources": [],
+    "sleep_until": 1783085677127,
+    "status": "active",
+    "created_at": "2026-07-02T17:34:37.127Z",
+    "completed_at": null,
+    "workload_summary": null
+  },
+  {
+    "id": "T6",
+    "description": "境外汇款",
+    "type": "其他",
+    "deadline": "未设置",
+    "progress": 80,
+    "current_goal": "分别激活其余港卡，入 8w 到 ibkr",
+    "resources": [],
+    "sleep_until": 1783166591996,
+    "status": "active",
+    "created_at": "2026-07-02T17:34:37.172Z",
+    "completed_at": null,
+    "workload_summary": null
+  },
+  {
+    "id": "T7",
+    "description": "福利领取",
+    "type": "其他",
+    "deadline": "今天",
+    "progress": 0,
+    "current_goal": "1.领取汇丰的1000苹果礼品卡；2.领取Google One相关福利",
+    "resources": [],
+    "sleep_until": 1783138780880,
+    "status": "active",
+    "created_at": "2026-07-04T04:04:40.880Z",
+    "completed_at": null,
+    "workload_summary": null
+  }
+]

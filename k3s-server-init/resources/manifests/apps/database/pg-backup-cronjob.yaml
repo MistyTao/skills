@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pg-backup
+  namespace: database
+  labels:
+    app.kubernetes.io/name: pg-backup
+    app.kubernetes.io/component: backup
+spec:
+  schedule: "${BACKUP_SCHEDULE}"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-backup
+              image: postgres:18
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  TIMESTAMP=$$(date +%Y%m%d_%H%M%S)
+                  BACKUP_FILE="/backups/pgdump_$${BACKUP_DB}_$${TIMESTAMP}.sql.gz"
+                  echo "[$$(date)] Starting backup of database: $${BACKUP_DB}"
+                  PGPASSWORD="$${BACKUP_PASSWORD}" pg_dump \
+                    -h postgresql.database.svc.cluster.local \
+                    -U "$${BACKUP_USER}" \
+                    -d "$${BACKUP_DB}" \
+                    --verbose \
+                    | gzip > "$${BACKUP_FILE}"
+                  echo "[$$(date)] Backup completed: $${BACKUP_FILE} ($$(du -h $${BACKUP_FILE} | cut -f1))"
+                  # Cleanup old backups
+                  echo "[$$(date)] Cleaning up backups older than ${BACKUP_RETAIN_DAYS} days..."
+                  find /backups -name "pgdump_*.sql.gz" -mtime +${BACKUP_RETAIN_DAYS} -delete -print
+                  echo "[$$(date)] Remaining backups:"
+                  ls -lh /backups/pgdump_*.sql.gz 2>/dev/null || echo "  (none)"
+              env:
+                - name: BACKUP_DB
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-secret
+                      key: POSTGRES_DB
+                - name: BACKUP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-secret
+                      key: POSTGRES_USER
+                - name: BACKUP_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgresql-secret
+                      key: POSTGRES_PASSWORD
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+          volumes:
+            # 使用 hostPath 而非独立 PVC，避免 local-path StorageClass
+            # 的 WaitForFirstConsumer 延迟绑定导致 Flux 健康检查超时。
+            # CronJob 可能间隔数小时才执行一次，在此期间 PVC 不会被绑定，
+            # 而 Flux wait:true 会一直等待 PVC Ready，造成无限超时循环。
+            - name: backup-storage
+              hostPath:
+                path: /opt/pg-backups
+                type: DirectoryOrCreate
